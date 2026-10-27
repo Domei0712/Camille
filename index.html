@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="168計畫">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>168計畫</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1f1e1c;--mu:#6b6a65;--bd:#e3e1da;--ac:#185FA5;--acb:#E6F1FB;--ok:#3B6D11;--okb:#EAF3DE;--wa:#854F0B;--wab:#FAEEDA;--gr:#5F5E5A;--grb:#F1EFE8;--er:#A32D2D}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1a19;--card:#262624;--tx:#f1efe8;--mu:#b4b2a9;--bd:#3a3a37;--ac:#85B7EB;--acb:#0C447C;--ok:#C0DD97;--okb:#27500A;--wa:#FAC775;--wab:#633806;--gr:#D3D1C7;--grb:#444441;--er:#F09595}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"PingFang TC",sans-serif;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 32px);-webkit-text-size-adjust:100%}
+h1{font-size:22px;margin:4px 0 12px}
+h2{font-size:17px;margin:22px 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.lbl{font-size:13px;color:var(--mu);display:block;margin-bottom:4px}
+.big{font-size:20px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin:10px 0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);margin-bottom:6px;font-size:15px;text-align:left}
+.row.sel{border:2px solid var(--ac)}
+.pill{font-size:12px;padding:2px 8px;border-radius:8px}
+input,select,textarea{width:100%;font-size:16px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-family:inherit}
+button.b{font-size:15px;padding:10px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)}
+button.p{background:var(--ac);color:var(--card);border-color:var(--ac)}
+.meal{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd);font-size:15px}
+.err{font-size:13px;color:var(--er);min-height:18px;margin:4px 0}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<h1>168計畫</h1>
+<div class="grid">
+  <div class="stat"><span class="lbl">現在狀態</span><span class="big" id="now">--</span><span class="lbl" id="nowsub" style="margin-top:4px"></span></div>
+  <div class="stat"><span class="lbl">今天窗口</span><span class="big" id="tw">--</span><span class="lbl" id="wk" style="margin-top:4px"></span></div>
+</div>
+
+<h2>一週計畫</h2>
+<div id="week"></div>
+
+<div class="card">
+  <div id="dt" style="font-weight:600;margin-bottom:10px"></div>
+  <div class="grid">
+    <label style="grid-column:1/-1"><span class="lbl">類型</span>
+      <select id="ty"><option value="normal">一般</option><option value="party">聚餐</option><option value="ex">運動</option><option value="rec">恢復</option></select></label>
+    <label><span class="lbl">開始進食</span><input type="time" id="st"></label>
+    <label><span class="lbl">停止進食</span><input type="time" id="en"></label>
+  </div>
+  <div class="err" id="perr"></div>
+  <div id="meals"></div>
+  <button class="b" id="reset" style="margin-top:12px;font-size:13px">恢復預設計畫</button>
+</div>
+
+<h2>身體記錄</h2>
+<div class="card">
+  <div class="grid">
+    <label style="grid-column:1/-1"><span class="lbl">日期</span><input type="date" id="rd"></label>
+    <label><span class="lbl">體重 (kg)</span><input type="number" inputmode="decimal" step="0.1" id="rw" placeholder="58.5"></label>
+    <label><span class="lbl">體脂 (%)</span><input type="number" inputmode="decimal" step="0.1" id="rf" placeholder="27.3"></label>
+  </div>
+  <div class="err" id="rerr"></div>
+  <button class="b p" id="save">儲存記錄</button>
+  <div id="sum" style="font-size:14px;margin-top:12px;color:var(--mu)"></div>
+  <svg id="spark" width="100%" height="80" viewBox="0 0 300 80" preserveAspectRatio="none" style="margin-top:8px"></svg>
+  <div id="list"></div>
+</div>
+
+<h2>備份與還原</h2>
+<div class="card">
+  <div class="btns"><button class="b" id="bk">備份資料</button><button class="b" id="rs">從備份還原</button></div>
+  <div class="lbl" id="msg" style="margin-top:8px">建議每週備份一次，貼到備忘錄保存。</div>
+  <textarea id="io" rows="3" placeholder="還原時，把備份文字貼在這裡" style="margin-top:6px;font-size:13px"></textarea>
+</div>
+
+<script>
+const K='f168v1',D=['日','一','二','三','四','五','六'];
+const TN={normal:'一般',party:'聚餐',ex:'運動',rec:'恢復'};
+const TC={normal:['--grb','--gr'],party:['--wab','--wa'],ex:['--okb','--ok'],rec:['--acb','--ac']};
+const DEF=[{t:'rec',s:'13:00',e:'19:00'},{t:'normal',s:'07:00',e:'15:00'},{t:'party',s:'10:00',e:'21:00'},{t:'ex',s:'12:00',e:'19:00'},{t:'ex',s:'12:00',e:'19:00'},{t:'normal',s:'07:00',e:'15:00'},{t:'party',s:'10:00',e:'21:00'}];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const $=id=>document.getElementById(id);
+let S=null;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+if(!S||!S.plan)S={plan:clone(DEF),rec:[]};
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const m=t=>{const[a,b]=t.split(':').map(Number);return a*60+b};
+const f=n=>{n=((n%1440)+1440)%1440;return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
+const dur=n=>{const h=Math.floor(n/60),mm=n%60;return(h?h+'小時':'')+(mm?mm+'分':'')||'0分'};
+const today=()=>new Date().getDay();
+let sel=today();
+const fast=i=>{const p=S.plan[(i+6)%7],c=S.plan[i];return Math.round((1440-m(p.e)+m(c.s))/6)/10};
+
+function meals(p){
+  const s=m(p.s),e=m(p.e);let a;
+  if(p.t==='normal')a=[[s,'早餐：蛋白質＋全穀類，吃紮實'],[720,'午餐：蛋白質和蔬菜要足夠'],[e-30,'沙拉飲＋優格＋牛奶收尾'],[e,'停止進食，只喝水、無糖茶']];
+  else if(p.t==='party')a=[[s,'沙拉飲＋優格＋牛奶，第一餐'],[720,'午餐吃清淡，留胃口給晚上'],[1080,'聚餐：先吃再喝，一杯酒配一杯水'],[e,'停止進食']];
+  else if(p.t==='ex')a=[[s,'午餐：蛋白質要足夠'],[e-90,'沙拉飲＋優格＋牛奶，運動前補能量'],[e,'停止進食，運動時記得補水']];
+  else a=[[s,'第一餐：均衡為主'],[e-60,'晚餐：清淡，蛋白質＋蔬菜'],[e,'停止進食']];
+  return a.filter((x,i)=>i===0||x[0]===e||(x[0]>s&&x[0]<e)).sort((x,y)=>x[0]-y[0]);
+}
+
+function status(){
+  const d=new Date(),nm=d.getHours()*60+d.getMinutes(),i=d.getDay(),p=S.plan[i],s=m(p.s),e=m(p.e);
+  if(nm<s){$('now').textContent='斷食中';$('nowsub').textContent=dur(s-nm)+'後可進食';}
+  else if(nm<e){$('now').textContent='進食中';$('nowsub').textContent='還有'+dur(e-nm);}
+  else{const n=S.plan[(i+1)%7];$('now').textContent='斷食中';$('nowsub').textContent=dur(1440-nm+m(n.s))+'後可進食';}
+}
+
+function render(){
+  let w='',c=0;const t=today();
+  for(let k=1;k<=7;k++){
+    const i=k%7,p=S.plan[i],h=fast(i);if(h>=16)c++;
+    w+=`<button class="row${i===sel?' sel':''}" data-i="${i}"><span style="min-width:48px">週${D[i]}${i===t?'<span style="font-size:11px;color:var(--ac)"> 今天</span>':''}</span><span class="pill" style="background:var(${TC[p.t][0]});color:var(${TC[p.t][1]})">${TN[p.t]}</span><span>${p.s}–${p.e}</span><span style="font-size:13px;color:${h>=16?'var(--ok)':'var(--mu)'}">斷食${h}h</span></button>`;
+  }
+  $('week').innerHTML=w;
+  document.querySelectorAll('.row').forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render();});
+  const tp=S.plan[t];$('tw').textContent=tp.s+'–'+tp.e;$('wk').textContent='本週 '+c+'/7 天達16小時';
+  const p=S.plan[sel];
+  $('dt').textContent='週'+D[sel]+'・前一晚起斷食 '+fast(sel)+' 小時';
+  $('ty').value=p.t;$('st').value=p.s;$('en').value=p.e;
+  $('meals').innerHTML=meals(p).map(x=>`<div class="meal"><span style="min-width:48px;color:var(--mu)">${f(x[0])}</span><span>${x[1]}</span></div>`).join('');
+  status();renderRec();
+}
+
+function upd(){
+  const s=$('st').value,e=$('en').value;
+  if(!s||!e||m(e)<=m(s)){$('perr').textContent='停止時間要晚於開始時間';return;}
+  $('perr').textContent='';S.plan[sel]={t:$('ty').value,s,e};save();render();
+}
+['ty','st','en'].forEach(id=>$(id).onchange=upd);
+$('reset').onclick=()=>{if(confirm('把一週計畫恢復成預設？身體記錄不受影響。')){S.plan=clone(DEF);save();render();}};
+
+const n0=new Date();$('rd').value=new Date(n0-n0.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+['rw','rf','rd'].forEach(id=>$(id).oninput=()=>$('rerr').textContent='');
+$('save').onclick=()=>{
+  const w=parseFloat($('rw').value),fv=$('rf').value,fa=parseFloat(fv),d=$('rd').value;
+  if(!d||!(w>20&&w<300)){$('rerr').textContent='輸入日期和體重';return;}
+  if(fv&&!(fa>2&&fa<70)){$('rerr').textContent='體脂數字看起來不太對，再確認一下';return;}
+  S.rec=S.rec.filter(r=>r.d!==d);S.rec.push({d,w,f:fv?fa:null});S.rec.sort((a,b)=>a.d<b.d?-1:1);save();
+  $('rw').value='';$('rf').value='';renderRec();
+};
+
+function renderRec(){
+  const r=S.rec;
+  if(!r.length){$('sum').textContent='還沒有記錄，量完後把 Moving Life 的數字填進來。';$('spark').innerHTML='';$('list').innerHTML='';return;}
+  const a=r[0],b=r[r.length-1],dw=Math.round((b.w-a.w)*10)/10;
+  $('sum').innerHTML=`最新 ${b.w.toFixed(1)} kg${b.f!=null?'・體脂 '+b.f.toFixed(1)+'%':''}${r.length>1?`<br>從 ${a.d} 起 ${dw>0?'+':''}${dw.toFixed(1)} kg`:''}`;
+  if(r.length>1){
+    const ws=r.map(x=>x.w),mx=Math.max(...ws),mn=Math.min(...ws),rg=mx-mn||1;
+    const pts=r.map((x,i)=>`${(i/(r.length-1)*290+5).toFixed(1)},${(70-(x.w-mn)/rg*60).toFixed(1)}`).join(' ');
+    $('spark').innerHTML=`<polyline points="${pts}" fill="none" stroke="#378ADD" stroke-width="2"/>`;
+  }else $('spark').innerHTML='';
+  $('list').innerHTML=r.slice(-10).reverse().map(x=>`<div class="meal" style="justify-content:space-between"><span style="color:var(--mu)">${x.d}</span><span>${x.w.toFixed(1)} kg${x.f!=null?'・'+x.f.toFixed(1)+'%':''}</span><button class="b" data-d="${x.d}" style="padding:4px 10px;font-size:13px">刪除</button></div>`).join('');
+  document.querySelectorAll('[data-d]').forEach(btn=>btn.onclick=()=>{if(confirm('刪除 '+btn.dataset.d+' 的記錄？')){S.rec=S.rec.filter(z=>z.d!==btn.dataset.d);save();renderRec();}});
+}
+
+$('bk').onclick=async()=>{
+  const t=JSON.stringify(S);
+  if(navigator.share){try{await navigator.share({title:'168計畫備份',text:t});$('msg').textContent='已分享備份';return;}catch(e){}}
+  $('io').value=t;
+  try{await navigator.clipboard.writeText(t);$('msg').textContent='已複製，貼到備忘錄保存';}catch(e){$('msg').textContent='請全選下方文字複製保存';}
+};
+$('rs').onclick=()=>{
+  try{const x=JSON.parse($('io').value);if(!x.plan||!x.rec)throw 0;
+    if(!confirm('用這份備份覆蓋目前的資料？'))return;
+    S=x;save();render();$('msg').textContent='已還原';$('io').value='';
+  }catch(e){$('msg').textContent='備份內容格式不對，請貼上完整的備份文字';}
+};
+
+render();setInterval(status,60000);
+</script>
+</body>
+</html>
